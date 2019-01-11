@@ -2,9 +2,9 @@
 
 # set -ex
 
-GPC_CONFIGS=$(gcloud config configurations list | awk '{print$1}' | sed -n '2,$p')
+GPC_CONFIGS=$(gcloud config configurations list --format 'value(name)' | sed -n '2,$p')
 
-GCP=$(gcloud config configurations list | awk '/True/{print$4}')
+GCP=$(gcloud config configurations list --filter 'is_active=true' --format 'value(properties.core.project)')
 
 if [ -z "$GCP" ]; then
     echo "You don't have any Google Project"
