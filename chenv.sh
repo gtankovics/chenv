@@ -33,6 +33,9 @@ else
                     gcloud config configurations activate $1
                     fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
                     CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
+
+                    # TODO handle multiple clusters
+
                     if [ -z "$CLUSTER" ]; then
                         echo "$1 project does not contain any running clusters."
                         kubectl config use-context empty
