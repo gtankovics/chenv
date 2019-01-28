@@ -2,11 +2,12 @@
 
 # set -ex
 
-GPC_CONFIGS=$(gcloud config configurations list --format 'value(name)' | sed -n '2,$p')
+GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
+GCP_CONFIGS_LEN=$(gcloud config configurations list --format="value(name)" | wc -l) 
 
-GCP=$(gcloud config configurations list --filter 'is_active=true' --format 'value(properties.core.project)')
+GCP_CURRENT_CONFIG=$(gcloud config configurations list --filter 'is_active=true' --format 'value(name)')
 
-if [ -z "$GCP" ]; then
+if [ -z "$GCP_CONFIGS" ]; then
     echo "You don't have any Google Project"
 else
     if [ -z $1 ]; then
@@ -17,32 +18,35 @@ else
 
     else
 
-        for CFG in $GPC_CONFIGS; do
-            if [ "$CFG" == $1 ]; then
-                SET_PROJECT=1
-            fi
-        done
-
-        # echo "Set Project: $SET_PROJECT"
-
-        if [ "$SET_PROJECT" == 1 ]; then
-                fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
-                gcloud config configurations activate $1
-                # export GOOGLE_PROJECT="$(gcloud config configurations list --filter 'is_active=true' --format 'value(properties.core.project)')"
-                CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format='value(name)' --limit 1)
-                if [ -z "$CLUSTER" ]; then
-                    echo "$1 project does not contain any running clusters."
-                    kubectl config use-context empty
-                else
-                    gcloud container clusters get-credentials $CLUSTER
-                    # export KUBERNETES_CLUSTER="$CLUSTER"
+        if [ $1 == $GCP_CURRENT_CONFIG ] && [ "$2" != "reset" ]; then
+            echo "$1 is the current config."
+        else
+            for CFG in $GCP_CONFIGS; do
+                if [ "$CFG" == $1 ]; then
+                    SET_PROJECT=true
+                    break
                 fi
-            else
+            done
 
-                echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
-                echo "$GPC_CONFIGS"
+            if [ "$SET_PROJECT" ]; then
+                    fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                    gcloud config configurations activate $1
+                    fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
+                    CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
+                    if [ -z "$CLUSTER" ]; then
+                        echo "$1 project does not contain any running clusters."
+                        kubectl config use-context empty
+                        fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                    else
+                        gcloud container clusters get-credentials $CLUSTER
+                        fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                    fi
+                else
 
+                    echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
+                    echo "$GCP_CONFIGS"
+
+            fi
         fi
-
     fi
 fi
