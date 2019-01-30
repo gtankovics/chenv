@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -ex
+# set -x
 
 GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
 GCP_CONFIGS_LEN=$(gcloud config configurations list --format="value(name)" | wc -l) 
@@ -29,6 +29,7 @@ else
             done
 
             if [ "$SET_PROJECT" ]; then
+
                     fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
                     gcloud config configurations activate $1
                     fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
@@ -40,9 +41,11 @@ else
                         echo "$1 project does not contain any running clusters."
                         kubectl config use-context empty
                         fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                        fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
                     else
                         gcloud container clusters get-credentials $CLUSTER
                         fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                        fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
                     fi
                 else
 
