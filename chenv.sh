@@ -3,7 +3,7 @@
 # set -x
 
 GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
-GCP_CONFIGS_LEN=$(gcloud config configurations list --format="value(name)" | wc -l) 
+# GCP_CONFIGS_LEN=$(gcloud config configurations list --format="value(name)" | wc -l) 
 
 GCP_CURRENT_CONFIG=$(gcloud config configurations list --filter 'is_active=true' --format 'value(name)')
 
@@ -18,6 +18,12 @@ else
 
     else
 
+        if [ $1 == "reset" ]; then
+            SET_PROJECT=true
+            SELECTED_CONFIG=$GCP_CURRENT_CONFIG
+        else
+            SELECTED_CONFIG=$1
+        fi
         if [ $1 == $GCP_CURRENT_CONFIG ] && [ "$2" != "reset" ]; then
             echo "$1 is the current config."
         else
@@ -27,32 +33,29 @@ else
                     break
                 fi
             done
+        fi
+        if [ "$SET_PROJECT" ]; then
 
-            if [ "$SET_PROJECT" ]; then
+                fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                gcloud config configurations activate $SELECTED_CONFIG
+                fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
+                CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
 
-                    fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
-                    gcloud config configurations activate $1
-                    fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
-                    CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
+                # TODO handle multiple clusters
 
-                    # TODO handle multiple clusters
-
-                    if [ -z "$CLUSTER" ]; then
-                        echo "$1 project does not contain any running clusters."
-                        kubectl config use-context empty
-                        fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
-                        fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
-                    else
-                        gcloud container clusters get-credentials $CLUSTER
-                        fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
-                        fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
-                    fi
+                if [ -z "$CLUSTER" ]; then
+                    echo "$1 project does not contain any running clusters."
+                    kubectl config use-context empty
+                    fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                    fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
                 else
-
-                    echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
-                    echo "$GCP_CONFIGS"
-
-            fi
+                    gcloud container clusters get-credentials $CLUSTER
+                    fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+                    fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
+                fi
+            else
+                echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
+                echo "$GCP_CONFIGS"
         fi
     fi
 fi
