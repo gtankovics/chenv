@@ -45,7 +45,7 @@ else
 
                 if [ -z "$CLUSTER" ]; then
                     echo "$1 project does not contain any running clusters."
-                    kubectl config use-context empty
+                    kubectl config use-context n/a
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
                     fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
                 else
