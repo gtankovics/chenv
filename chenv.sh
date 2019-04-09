@@ -39,6 +39,7 @@ else
                 fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
                 gcloud config configurations activate $SELECTED_CONFIG
                 fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
+                fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
                 CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
 
                 # TODO handle multiple clusters
