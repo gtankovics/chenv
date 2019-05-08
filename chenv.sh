@@ -19,6 +19,7 @@ else
     else
 
         if [ $1 == "reset" ]; then
+            VALID_PROJECT=true
             SET_PROJECT=true
             SELECTED_CONFIG=$GCP_CURRENT_CONFIG
         else
@@ -26,15 +27,19 @@ else
         fi
         if [ $1 == $GCP_CURRENT_CONFIG ] && [ "$2" != "reset" ]; then
             echo "$1 is the current config."
+            VALID_PROJECT=true
         else
             for CFG in $GCP_CONFIGS; do
                 if [ "$CFG" == $1 ]; then
+                    VALID_PROJECT=true
                     SET_PROJECT=true
                     break
                 fi
             done
         fi
-        if [ "$SET_PROJECT" ]; then
+        if [ $VALID_PROJECT ]; then 
+        
+            if [ "$SET_PROJECT" ]; then
 
                 fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
                 gcloud config configurations activate $SELECTED_CONFIG
@@ -53,10 +58,12 @@ else
                     gcloud container clusters get-credentials $CLUSTER
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
                     fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
+                    fish -c 'set -xU GKE_CLUSTER (gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)'
                 fi
-            else
-                echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
-                echo "$GCP_CONFIGS"
+            fi
+        else
+            echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
+            echo "$GCP_CONFIGS"
         fi
     fi
 fi
