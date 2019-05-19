@@ -33,6 +33,7 @@ else
                 if [ "$CFG" == $1 ]; then
                     VALID_PROJECT=true
                     SET_PROJECT=true
+                    CLEAR_CREDENTIALS=true
                     break
                 fi
             done
@@ -41,9 +42,11 @@ else
 
             fish -c 'set -U reset_fish_detailed_prompt true'
 
-            if [ "$SET_PROJECT" ]; then
+            if [ $SET_PROJECT ]; then
 
-                fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                if [ $CLEAR_CREDENTIALS ]; then
+                    fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                fi
                 gcloud config configurations activate $SELECTED_CONFIG
                 fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
                 fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
