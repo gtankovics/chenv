@@ -50,10 +50,9 @@ else
                 # TODO handle multiple clusters
 
                 if [ -z "$CLUSTER" ]; then
-                    echo "$1 project does not contain any running clusters."
-                    kubectl config use-context n/a
-                    fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
-                    fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
+                    echo "$GOOGLE_PROJECT project does not contain any running clusters."
+                    kubectl config unset current-context
+                    fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
                 else
                     gcloud container clusters get-credentials $CLUSTER
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
