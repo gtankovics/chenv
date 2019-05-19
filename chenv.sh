@@ -38,7 +38,9 @@ else
             done
         fi
         if [ $VALID_PROJECT ]; then 
-        
+
+            fish -c 'set -U reset_fish_detailed_prompt true'
+
             if [ "$SET_PROJECT" ]; then
 
                 fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
