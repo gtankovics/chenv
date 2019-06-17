@@ -50,6 +50,7 @@ else
                 gcloud config configurations activate $SELECTED_CONFIG
                 fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
                 fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
+                fish -c 'set -xU GOOGLE_ZONE (gcloud config configurations list --filter "is_active=true" --format="value(properites.compute.zone)")'
                 CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
 
                 # TODO handle multiple clusters
