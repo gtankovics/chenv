@@ -48,8 +48,11 @@ else
                     fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
                 fi
                 gcloud config configurations activate $SELECTED_CONFIG
-                fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
                 fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
+
+                # this is required because variable export through fish is not available later
+                GOOGLE_PROJECT=$(gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")
+                fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
                 fish -c 'set -xU GOOGLE_ZONE (gcloud config configurations list --filter "is_active=true" --format="value(properties.compute.zone)")'
                 CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
 
