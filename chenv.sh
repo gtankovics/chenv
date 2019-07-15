@@ -53,6 +53,7 @@ else
                 # this is required because variable export through fish is not available later
                 GOOGLE_PROJECT=$(gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")
                 fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
+                fish -c 'set -xU GOOGLE_REGION (gcloud config configurations list --filter "is_active=true" --format="value(properties.compute.region)")'
                 fish -c 'set -xU GOOGLE_ZONE (gcloud config configurations list --filter "is_active=true" --format="value(properties.compute.zone)")'
                 CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
 
