@@ -68,7 +68,6 @@ else
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
                     fish -c 'set -xU K8S_CLUSTER_SHORT (kubectl config current-context | cut -d "_" -f 4)'
                     fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
-                    fish -c 'set -xU GKE_CLUSTER (gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)'
 
                 fi
             fi
