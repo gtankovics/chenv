@@ -40,7 +40,7 @@ else
         fi
         if [ $VALID_PROJECT ]; then 
 
-            fish -c 'set -U reset_fish_detailed_prompt 1'
+            fish -c 'set -U fish_detailed_prompt_reset 1'
 
             if [ $SET_PROJECT ]; then
 
