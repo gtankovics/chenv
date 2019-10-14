@@ -3,21 +3,17 @@
 # set -x
 
 GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
-# GCP_CONFIGS_LEN=$(gcloud config configurations list --format="value(name)" | wc -l) 
 
 GCP_CURRENT_CONFIG=$(gcloud config configurations list --filter 'is_active=true' --format 'value(name)')
 
 if [ -z "$GCP_CONFIGS" ]; then
-    echo "You don't have any Google Project"
+    echo "You don't have any gcloud configurations."
 else
     if [ -z $1 ]; then
-
         echo "Please add configuration name."
         echo "Your configurations:"
         echo "$GPC_CONFIGS"
-
     else
-
         if [ $1 == "reset" ]; then
             VALID_PROJECT=true
             SET_PROJECT=true
@@ -25,8 +21,8 @@ else
         else
             SELECTED_CONFIG=$1
         fi
-        if [ $1 == $GCP_CURRENT_CONFIG ] && [ "$2" != "reset" ]; then
-            echo "$1 is the current config."
+        if [ $1 == $GCP_CURRENT_CONFIG ] && [ $2 == $K8S_CLUSTER_SHORT ]; then
+            echo "$1 is the current config and $2 is the current cluster."
             VALID_PROJECT=true
         else
             for CFG in $GCP_CONFIGS; do
@@ -51,24 +47,45 @@ else
                 fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
 
                 # this is required because variable export through fish is not available later
-                GOOGLE_PROJECT=$(gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")
-                fish -c 'set -xU GOOGLE_PROJECT (gcloud config configurations list --filter "is_active=true" --format="value(properties.core.project)")'
-                fish -c 'set -xU GOOGLE_REGION (gcloud config configurations list --filter "is_active=true" --format="value(properties.compute.region)")'
-                fish -c 'set -xU GOOGLE_ZONE (gcloud config configurations list --filter "is_active=true" --format="value(properties.compute.zone)")'
-                CLUSTER=$(gcloud container clusters list --filter status=RUNNING --format="value(name)" --limit 1)
+                GOOGLE_PROJECT=$(gcloud config list --format="value(core.project)")
+                fish -c 'set -xU GOOGLE_PROJECT (gcloud config list --format="value(core.project)")'
+                fish -c 'set -xU GOOGLE_REGION (gcloud config list --format="value(compute.region)")'
+                fish -c 'set -xU GOOGLE_ZONE (gcloud config list --format="value(compute.zone)")'
 
-                # TODO handle multiple clusters
+                CLUSTERS=($(gcloud container clusters list --filter status=RUNNING --format="value(name)"))
 
-                if [ -z "$CLUSTER" ]; then
+                if [ -z "$CLUSTERS" ]; then
                     echo "$GOOGLE_PROJECT project does not contain any running clusters."
                     kubectl config unset current-context
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
                 else
+                    if [ "${#CLUSTERS[@]}" -gt 1 ]; then
+                        echo "$GOOGLE_PROJECT has multiple clusters."
+                        gcloud container clusters list
+                    fi
+                    CLUSTER=$(gcloud config list --format 'value(container.cluster)')
+                    if [ -z $CLUSTER ]; then
+                        if [ -z $2 ]; then
+                            echo "Cluster not specified in configurations. Use the first cluster. ${CLUSTERS[0]}"
+                            CLUSTER=${CLUSTERS[0]}
+                        else
+                            echo "Use $2 for 'kubectl'"
+                            CLUSTER=$2
+                        fi
+                    else 
+                        echo "Use $CLUSTER from configuration."
+                    fi
+                    CLUSTER_ZONE=$(gcloud container clusters list --filter="(name=$CLUSTER)" --format='value(location)')
+                    if [ "$GOOGLE_ZONE" != "$CLUSTER_ZONE" ]; then
+                        gcloud config set compute/zone $CLUSTER_ZONE --quiet
+                        gcloud config set compute/region ${CLUSTER_ZONE%??} --quiet
+                        fish -c 'set -xU GOOGLE_ZONE '$CLUSTER_ZONE''
+                        fish -c 'set -xU GOOGLE_REGION '${CLUSTER_ZONE%??}''
+                    fi
                     gcloud container clusters get-credentials $CLUSTER
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
                     fish -c 'set -xU K8S_CLUSTER_SHORT (kubectl config current-context | cut -d "_" -f 4)'
                     fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
-
                 fi
             fi
         else
