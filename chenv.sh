@@ -21,8 +21,15 @@ else
         else
             SELECTED_CONFIG=$1
         fi
-        if [ $1 == $GCP_CURRENT_CONFIG ] && [ $2 == $K8S_CLUSTER_SHORT ]; then
-            echo "$1 is the current config and $2 is the current cluster."
+        if [ $1 == $GCP_CURRENT_CONFIG ]; then
+            echo -n "$1 is the current config."
+            if [ ! -z $2 ]; then
+                if [ $2 == $K8S_CLUSTER_SHORT ]; then
+                    echo "$2 is the current cluster."
+                else
+                    SET_PROJECT=true
+                fi
+            fi
             VALID_PROJECT=true
         else
             for CFG in $GCP_CONFIGS; do
