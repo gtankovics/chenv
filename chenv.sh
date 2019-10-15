@@ -56,7 +56,9 @@ else
                 # this is required because variable export through fish is not available later
                 GOOGLE_PROJECT=$(gcloud config list --format="value(core.project)")
                 fish -c 'set -xU GOOGLE_PROJECT (gcloud config list --format="value(core.project)")'
+                GOOGLE_REGION=$(gcloud config list --format="value(compute.region)")
                 fish -c 'set -xU GOOGLE_REGION (gcloud config list --format="value(compute.region)")'
+                GOOGLE_ZONE=$(gcloud config list --format="value(compute.zone)")
                 fish -c 'set -xU GOOGLE_ZONE (gcloud config list --format="value(compute.zone)")'
 
                 CLUSTERS=($(gcloud container clusters list --filter status=RUNNING --format="value(name)"))
@@ -70,7 +72,7 @@ else
                         echo "$GOOGLE_PROJECT has multiple clusters."
                         gcloud container clusters list
                     fi
-                    CLUSTER=$(gcloud config list --format 'value(container.cluster)')
+                    CLUSTER=$(gcloud config list --format='value(container.cluster)')
                     if [ -z $CLUSTER ]; then
                         if [ -z $2 ]; then
                             echo "Cluster not specified in configurations. Use the first cluster. ${CLUSTERS[0]}"
