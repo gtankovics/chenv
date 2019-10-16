@@ -56,7 +56,7 @@ else
                     fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
                 fi
                 gcloud config configurations activate $SELECTED_CONFIG
-                fish -c 'set -xU GOOGLE_CONFIG_NAME (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
+                fish -c 'set -xU GOOGLE_CONFIG (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
 
                 # this is required because variable export through fish is not available later
                 GOOGLE_PROJECT=$(gcloud config list --format="value(core.project)")
@@ -72,6 +72,7 @@ else
                     echo "$GOOGLE_PROJECT project does not contain any running clusters."
                     kubectl config unset current-context
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
+                    fish -c 'set -xU K8S_CLUSTER_SHORT "n/a"'
                 else
                     if [ "${#CLUSTERS[@]}" -gt 1 ]; then
                         echo "$GOOGLE_PROJECT has multiple clusters."
