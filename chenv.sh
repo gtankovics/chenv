@@ -73,6 +73,7 @@ else
                     kubectl config unset current-context
                     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
                     fish -c 'set -xU K8S_CLUSTER_SHORT "n/a"'
+                    fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
                 else
                     if [ "${#CLUSTERS[@]}" -gt 1 ]; then
                         echo "$GOOGLE_PROJECT has multiple clusters."
