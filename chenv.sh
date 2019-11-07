@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 
 GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
 
