@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x
+set -x
 
 GCP_CONFIGS=$(gcloud config configurations list --format="value(name)") 
 
@@ -14,38 +14,44 @@ else
         echo "Your configurations:"
         echo "$GPC_CONFIGS"
     else
-        if [ $1 == "reset" ]; then
-            VALID_PROJECT=true
-            SET_PROJECT=true
-            SELECTED_CONFIG=$GCP_CURRENT_CONFIG
-        else
-            SELECTED_CONFIG=$1
-        fi
-        if [ $1 == $GCP_CURRENT_CONFIG ]; then
-            echo "$1 is the current config. "
-            if [ ! -z $2 ]; then
-                if [ $2 == $K8S_CLUSTER_SHORT ]; then
-                    echo "$2 is the current cluster."
-                else
-                    SET_PROJECT=true
-                    for CLUSTER in $(gcloud container clusters list --format='value(name)'); do
-                        if [ $CLUSTER == $2 ]; then
-                            VALID_CLUSTER=true
-                        fi
-                    done
+        case $1 in 
+            "list")
+                printf "Your configs:\n$GCP_CONFIGS"
+                ;;
+            "reset")
+                VALID_PROJECT=true
+                SET_PROJECT=true
+                SELECTED_CONFIG=$GCP_CURRENT_CONFIG
+                ;;
+            "$GCP_CURRENT_CONFIG")
+                echo "$1 is the current config. "
+                if [ ! -z $2 ]; then
+                    if [ $2 == $K8S_CLUSTER_SHORT ]; then
+                        echo "$2 is the current cluster."
+                    else
+                        SET_PROJECT=true
+                        for CLUSTER in $(gcloud container clusters list --format='value(name)'); do
+                            if [ $CLUSTER == $2 ]; then
+                                VALID_CLUSTER=true
+                            fi
+                        done
+                    fi
                 fi
-            fi
-            VALID_PROJECT=true
-        else
-            for CFG in $GCP_CONFIGS; do
-                if [ "$CFG" == $1 ]; then
-                    VALID_PROJECT=true
-                    SET_PROJECT=true
-                    CLEAR_CREDENTIALS=true
-                    break
-                fi
-            done
-        fi
+                VALID_PROJECT=true
+                ;;
+             *)
+                for CFG in $GCP_CONFIGS; do
+                    if [ $CFG == $1 ]; then
+                        VALID_PROJECT=true
+                        SET_PROJECT=true
+                        CLEAR_CREDENTIALS=true
+                        SELECTED_CONFIG=$1
+                        break
+                    fi
+                done
+                ;;
+        esac
+
         if [ $VALID_PROJECT ]; then 
 
             fish -c 'set -U fish_detailed_prompt_reset 1'
