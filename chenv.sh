@@ -19,7 +19,7 @@ else
                 printf "Your configs:\n$GCP_CONFIGS"
                 ;;
             "reset")
-                VALID_PROJECT=true
+                VALID_CONFIG=true
                 SET_PROJECT=true
                 SELECTED_CONFIG=$GCP_CURRENT_CONFIG
                 ;;
@@ -37,12 +37,12 @@ else
                         done
                     fi
                 fi
-                VALID_PROJECT=true
+                VALID_CONFIG=true
                 ;;
              *)
                 for CFG in $GCP_CONFIGS; do
                     if [ $CFG == $1 ]; then
-                        VALID_PROJECT=true
+                        VALID_CONFIG=true
                         SET_PROJECT=true
                         CLEAR_CREDENTIALS=true
                         SELECTED_CONFIG=$1
@@ -52,7 +52,7 @@ else
                 ;;
         esac
 
-        if [ $VALID_PROJECT ]; then 
+        if [ $VALID_CONFIG ]; then 
 
             fish -c 'set -U fish_detailed_prompt_reset 1'
 
@@ -117,9 +117,6 @@ else
                     fish -c 'set -U fish_prompt_detailed_reset 1'
                 fi
             fi
-        else
-            echo -e "You don't have $1 configuration.\nPlease select one configuration from:"
-            echo "$GCP_CONFIGS"
         fi
     fi
 fi
