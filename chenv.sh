@@ -97,15 +97,15 @@ else
 
                 if [ -z "$CLUSTER_IN_CONFIGURATION" ]; then
                     echo "Cluster is not specified in selected [$SELECTED_CONFIGURATION] configuration."
-                    echo "Looking for running cluster in [$GOOGLE_ZONE]..."
+                    echo "Looking for running cluster(s) in [$GOOGLE_ZONE]..."
 
-                    CLUSTER=$(gcloud container clusters list --zone $GOOGLE_ZONE --format='value(name)')
+                    CLUSTER=$(gcloud container clusters list --zone $GOOGLE_ZONE --filter status=RUNNING --format='value(name)')
                     
                     if [ -z $CLUSTER ]; then
-                        echo "This zone [$GOOGLE_ZONE] in $GOOGLE_PROJECT does not have any running clusters."
+                        echo "[$GOOGLE_PROJECT] in [$GOOGLE_ZONE] zone does not have any running clusters."
                         RUNNING_CLUSTERS=($(gcloud container clusters list --filter status=RUNNING --format="value(name)"))
                         if [ -z "$RUNNING_CLUSTERS" ]; then
-                            echo "$GOOGLE_PROJECT project does not have any running clusters."
+                            echo "$GOOGLE_PROJECT project does not have any running clusters in any region."
                         else
                             if [ "${#RUNNING_CLUSTERS[@]}" -ge 1 ]; then
                                 echo -e "But $GOOGLE_PROJECT has clusters. Check the list below and try one of them.\n"
@@ -114,6 +114,7 @@ else
                         fi
                         unsetK8sContext
                     else
+                        echo "[$CLUSTER] is running in [$GOOGLE_ZONE]. Use this for kubectl!"
                         setK8sContext $GOOGLE_PROJECT $GOOGLE_ZONE $CLUSTER
                     fi
                 else
