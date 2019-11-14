@@ -119,7 +119,7 @@ else
                 else
                     # check cluster is running 
                     if [[ $(gcloud container clusters list --filter "name=$CLUSTER_IN_CONFIGURATION" --format="value(status)") == "RUNNING" ]]; then
-                        echo "$CLUSTER_IN_CONFIGURATION is running. Use for kubectl"
+                        echo "Cluster [$CLUSTER_IN_CONFIGURATION] is running. Use for kubectl"
                         setK8sContext $GOOGLE_PROJECT $GOOGLE_ZONE $CLUSTER_IN_CONFIGURATION
                     else
                         echo "This cluster [$CLUSTER_IN_CONFIGURATION] from [$GOOGLE_PROJECT] project is not available in [$GOOGLE_ZONE] zone. kubectl context unset."
