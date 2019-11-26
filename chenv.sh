@@ -37,6 +37,7 @@ else
         case $1 in 
             "list")
                 printf "Your configs:\n$GCP_CONFIGS"
+                exit
                 ;;
             "reset")
                 VALID_CONFIG=true
@@ -129,6 +130,9 @@ else
                     fi
                 fi
             fi
+        else
+            echo "$1 is not a valid configuration."
+            echo "Use 'chenv list' for available configurations."
         fi
     fi
 fi
