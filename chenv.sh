@@ -39,7 +39,7 @@ else
                 printf "Your configs:\n$GCP_CONFIGS"
                 exit
                 ;;
-            "reset")
+            "reload")
                 VALID_CONFIG=true
                 SET_PROJECT=true
                 SELECTED_CONFIGURATION=$GCP_CURRENT_CONFIG
