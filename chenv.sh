@@ -93,6 +93,18 @@ else
                 GOOGLE_ZONE=$(gcloud config list --format="value(compute.zone)")
                 fish -c 'set -xU GOOGLE_ZONE (gcloud config list --format="value(compute.zone)")'
 
+                # set ACTIVE_DOMAIN
+                case $GOOGLE_PROJECT in
+                    *production*)
+                        fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
+                    *everest*)
+                        fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
+                    *pilot*)
+                        fish -c 'set -xU ACTIVE_DOMAIN $PILOT_DOMAIN' ;;
+                    *)
+                        fish -c 'set -xU ACTIVE_DOMAIN $DEV_DOMAIN' ;;
+                esac
+
                 # check cluster in configuration    
                 CLUSTER_IN_CONFIGURATION=$(gcloud config list --format="value(container.cluster)")
 
