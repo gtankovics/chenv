@@ -86,6 +86,8 @@ else
                         fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
                     *everest*)
                         fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
+                    *educational*)
+                        fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
                     *pilot*)
                         fish -c 'set -xU ACTIVE_DOMAIN $PILOT_DOMAIN' ;;
                     *)
