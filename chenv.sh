@@ -9,15 +9,21 @@ function setK8sContext () {
     local LOCAL_CLUSTER_NAME=$3
 
     gcloud --project $LOCAL_GOOGLE_PROJECT container clusters get-credentials $LOCAL_CLUSTER_NAME --zone $LOCAL_GOOGLE_ZONE
+    fish -c 'set -e K8S_CLUSTER'
     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+    fish -c 'set -e K8S_CLUSTER_SHORT'
     fish -c 'set -xU K8S_CLUSTER_SHORT (kubectl config current-context | cut -d "_" -f 4)'
+    fish -c 'set -e K8S_CLUSTER_VERSION'
     fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
 }
 
 function unsetK8sContext () {
     kubectl config unset current-context
+    fish -c 'set -e K8S_CLUSTER'
     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
+    fish -c 'set -e K8S_CLUSTER_SHORT'
     fish -c 'set -xU K8S_CLUSTER_SHORT "n/a"'
+    fish -c 'set -e K8S_CLUSTER_VERSION'
     fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
 }
 
@@ -67,7 +73,7 @@ else
             if [ $SET_PROJECT ]; then
 
                 if [ $CLEAR_CREDENTIALS ]; then
-                    fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                    fish -c 'set -e GOOGLE_APPLICATION_CREDENTIALS'
                 fi
                 gcloud config configurations activate $SELECTED_CONFIGURATION
                 fish -c 'set -xU GOOGLE_CONFIG (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
