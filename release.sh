@@ -1,3 +1,3 @@
 #!/bin/bash
 
-copy chenv.sh ~/bin/chenv
+cp chenv.sh ~/bin/chenv
