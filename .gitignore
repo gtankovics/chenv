@@ -1,2 +1,4 @@
 # ignore any test related file or folder
 test**
+
+.vscode
