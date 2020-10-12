@@ -9,16 +9,21 @@ function setK8sContext () {
     local LOCAL_CLUSTER_NAME=$3
 
     gcloud --project $LOCAL_GOOGLE_PROJECT container clusters get-credentials $LOCAL_CLUSTER_NAME --zone $LOCAL_GOOGLE_ZONE
+    fish -c 'set -e K8S_CLUSTER'
     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context)'
+    fish -c 'set -e K8S_CLUSTER_SHORT'
     fish -c 'set -xU K8S_CLUSTER_SHORT (kubectl config current-context | cut -d "_" -f 4)'
+    fish -c 'set -e K8S_CLUSTER_VERSION'
     fish -c 'set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")'
-    fish -c 'set -U fish_prompt_detailed_reset 1'
 }
 
 function unsetK8sContext () {
     kubectl config unset current-context
+    fish -c 'set -e K8S_CLUSTER'
     fish -c 'set -xU K8S_CLUSTER (kubectl config current-context 2>&1)'
+    fish -c 'set -e K8S_CLUSTER_SHORT'
     fish -c 'set -xU K8S_CLUSTER_SHORT "n/a"'
+    fish -c 'set -e K8S_CLUSTER_VERSION'
     fish -c 'set -xU K8S_CLUSTER_VERSION "n/a"'
 }
 
@@ -45,20 +50,8 @@ else
                 SELECTED_CONFIGURATION=$GCP_CURRENT_CONFIG
                 ;;
             "$GCP_CURRENT_CONFIG")
-                echo "$1 is the current config. "
-                if [ ! -z $2 ]; then
-                    if [ $2 == $K8S_CLUSTER_SHORT ]; then
-                        echo "$2 is the current cluster."
-                    else
-                        SET_PROJECT=true
-                        for CLUSTER in $(gcloud container clusters list --format='value(name)'); do
-                            if [ $CLUSTER == $2 ]; then
-                                VALID_CLUSTER=true
-                            fi
-                        done
-                    fi
-                fi
-                VALID_CONFIG=true
+                echo "$1 is the current config."
+                exit
                 ;;
              *)
                 for CFG in $GCP_CONFIGS; do
@@ -75,12 +68,12 @@ else
 
         if [ $VALID_CONFIG ]; then 
 
-            fish -c 'set -U fish_detailed_prompt_reset 1'
+            fish -c 'set -U fish_prompt_detailed_reset 1'
 
             if [ $SET_PROJECT ]; then
 
                 if [ $CLEAR_CREDENTIALS ]; then
-                    fish -c 'set -eU GOOGLE_APPLICATION_CREDENTIALS'
+                    fish -c 'set -e GOOGLE_APPLICATION_CREDENTIALS'
                 fi
                 gcloud config configurations activate $SELECTED_CONFIGURATION
                 fish -c 'set -xU GOOGLE_CONFIG (gcloud config configurations list --filter "is_active=true" --format="value(name)")'
@@ -98,6 +91,8 @@ else
                     *production*)
                         fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
                     *everest*)
+                        fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
+                    *educational*)
                         fish -c 'set -xU ACTIVE_DOMAIN $PRODUCTION_DOMAIN' ;;
                     *pilot*)
                         fish -c 'set -xU ACTIVE_DOMAIN $PILOT_DOMAIN' ;;
