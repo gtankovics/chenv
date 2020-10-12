@@ -2,23 +2,34 @@
 
 # -----------------------------------------------
 # This is chenv written in fish shell commands
-# and uses CLOUDSDK_ variables
 # -----------------------------------------------
+
+set -q GCLOUD_ENVIRONMENTS_PATH || set -xU GCLOUD_ENVIRONMENTS_PATH "~/.config/gcloud/configurations"
 
 function _showShortHelp
 	echo -e "Please add an argument or use 'help' for usage."
 end
 
 function _showLongHelp
-	echo -e "Usage:\n\tchenv [options]"
-	echo -e "\nValid options:
-	-h or --help\tShow this help.
-	-l or --list\tShow list of valid environments.
-	\t\tUse with -d or --details for environments' details.
-	-e or --env\tSet the selected environment for 'gcloud' and 'kubectl'.
-	-r or --reload\tReload the current environment.
-	-c or --clear\tClear the CLOUDSDK_* variables and unset 'kubectl' context. 
+	echo -e "Usage:\n\tfchenv [options]"
+	echo -e "\nOptions:
+	help\tShow this help.
+	list\tShow list of valid environments.
+	\tExtra options:
+	\tdetails\t\t\tList environments with details
+	\tprod or production\tList 'production' environment(s)
+	\tedu or educational\tList 'educational' environment(s)
+	\tpilot\t\t\tList 'pilot' environment(s)
+	\tqa\t\t\tList 'qa' environment(s)
+	\ttest\t\t\tList 'test' environments
+	set\tSet the selected environment for 'gcloud' and 'kubectl'.
+	reload\tReload the current environment.
+	clear\tClear the variables and unset 'kubectl' context. 
 	"
+end
+
+function _showReloadHelp
+	echo -e "\nUse 'fchenv reload' to reload it."
 end
 
 function _showList
@@ -31,7 +42,17 @@ function _showList
 end
 
 function _showListWithDetails
-	gcloud config configurations list
+	for line in (gcloud config configurations list --format='table(name,is_active:label=ACTIVE,properties.core.project,properties.compute.zone,properties.compute.region,properties.container.cluster)')
+		if string match -q -r ".*True.*" "$line"
+			set_color -b yellow
+			set_color -o black
+			echo $line
+			set_color -b normal
+			set_color normal
+		else
+			echo $line
+		end
+	end
 end
 
 function _setActiveDomainSuffix
@@ -48,16 +69,34 @@ end
 function _setK8sContext
 	set -l _cluster $argv[1]
 	gcloud container clusters get-credentials $_cluster
+    set -xU K8S_CLUSTER (kubectl config current-context)
+	set -xU K8S_CLUSTER_SHORT (echo $K8S_CLUSTER | cut -d "_" -f 4)
+    set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")
 end
 
 function _unSetK8sContext
 	kubectl config unset current-context
-	set -e CLOUDSDK_CONTAINER_CLUSTER
+	clearK8sVariables 
 end
 
-function _clearCloudsdkVariables
-	set -l showLogs $argv[1]
-	for variable in (set -n | grep "CLOUDSDK_\|GOOGLE_APPLICATION_CREDENTIALS")
+function _setDefaultGcloudProfile
+	gcloud config configurations activate default
+end
+
+function clearGoogleVariables
+	set -l _showLogs $argv[1]
+	for variable in (set -n | grep "GOOGLE")
+		if test -n "$showLogs"
+			echo -e "$variable\t\tcleared."
+		else
+			set -e $variable
+		end
+	end
+end
+
+function clearK8sVariables
+	set -l _showLogs $argv[1]
+	for variable in (set -n | grep "K8S")
 		if test -n "$showLogs"
 			echo -e "$variable\t\tcleared."
 		end
@@ -65,32 +104,41 @@ function _clearCloudsdkVariables
 	end
 end
 
+function _clearVariables
+	set -l _showLogs $argv[1]
+	if test -n "$_showLogs"
+		clearGoogleVariables true
+		clearK8sVariables true
+	else
+		clearGoogleVariables
+		clearK8sVariables
+	end
+end
+
 function _changeEnvironment
-	_clearCloudsdkVariables
+	_clearVariables
 	set -l _environment $argv[1]
 	gcloud config configurations activate $_environment
-	set -xU CLOUDSDK_ACTIVE_CONFIG $_environment
-	gcloud config list --format='value[separator=" "](core.project,compute.region,compute.zone,container.cluster)' | read _CLOUDSDK_PROJECT _CLOUDSDK_COMPUTE_REGION _CLOUDSDK_COMPUTE_ZONE _CLOUDSDK_CONTAINER_CLUSTER
-	# echo "'$_CLOUDSDK_PROJECT' '$_CLOUDSDK_COMPUTE_REGION' '$_CLOUDSDK_COMPUTE_ZONE' '$_CLOUDSDK_CONTAINER_CLUSTER'"
-	set -xU CLOUDSDK_PROJECT $_CLOUDSDK_PROJECT
+	set -xU GOOGLE_CONFIG $_environment
+	gcloud config list --format='value[separator=" "](core.project,compute.region,compute.zone,container.cluster)' | read _GOOGLE_PROJECT _GOOGLE_REGION _GOOGLE_ZONE _K8S_CLUSTER_SHORT
+	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
 	_setActiveDomainSuffix
-	set -xU CLOUDSDK_COMPUTE_REGION $_CLOUDSDK_COMPUTE_REGION
-	set -xU CLOUDSDK_COMPUTE_ZONE $_CLOUDSDK_COMPUTE_ZONE
-	if test -z "$_CLOUDSDK_CONTAINER_CLUSTER"
-		echo "[$CLOUDSDK_ACTIVE_CONFIG] does not have container/cluster property. Searching clusters from cloud."
-		set _CLOUDSDK_CONTAINER_CLUSTER (gcloud container clusters list --format='value(name)' --limit 1)
-		if test -n "$_CLOUDSDK_CONTAINER_CLUSTER"
-			echo "[$_CLOUDSDK_CONTAINER_CLUSTER] use for 'kubectl'"
+	set -xU GOOGLE_REGION $_GOOGLE_REGION
+	set -xU GOOGLE_ZONE $_GOOGLE_ZONE
+	if test -z "$_K8S_CLUSTER_SHORT"
+		echo "[$GOOGLE_CONFIG] does not have container/cluster property. Searching clusters from cloud."
+		set _K8S_CLUSTER_SHORT (gcloud container clusters list --format='value(name)' --limit 1)
+		if test -n "$_K8S_CLUSTER_SHORT"
+			echo "[$_K8S_CLUSTER_SHORT] use for 'kubectl'"
 		end
 	else
-		echo "[$CLOUDSDK_ACTIVE_CONFIG] has cluster property [$_CLOUDSDK_CONTAINER_CLUSTER] use it for 'kubectl'"
+		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT] use it for 'kubectl'"
 	end
-	if test -n "$_CLOUDSDK_CONTAINER_CLUSTER"
-		set -xU CLOUDSDK_CONTAINER_CLUSTER $_CLOUDSDK_CONTAINER_CLUSTER
-		_setK8sContext $CLOUDSDK_CONTAINER_CLUSTER
-		# reset fish_prompt
+	if test -n "$_K8S_CLUSTER_SHORT"
+		set -xU K8S_CLUSTER_SHORT $_K8S_CLUSTER_SHORT
+		_setK8sContext $K8S_CLUSTER_SHORT
 	else
-		echo "There's no cluster in [$CLOUDSDK_PROJECT] project."
+		echo "There's no cluster in [$GOOGLE_PROJECT] project in [$GOOGLE_REGION] region."
 		_unSetK8sContext
 	end
 end
@@ -104,10 +152,14 @@ if test -n "$argv"
 				switch $argv[2]
 					case "details"
 						_showListWithDetails
-					case "production"
+					case "prod" -o "production"
 						_showList "production"
-					case "educational"
+					case "edu" -o "educational"
 						_showList "educational"
+					case "pilot"
+						_showList "pilot"
+					case "qa"
+						_showList "qa"
 					case "test"
 						_showList "test"
 					case \*
@@ -121,8 +173,9 @@ if test -n "$argv"
 				set -l _selectedEnvironment $argv[2]
 				set -l _ENVIRONMENTS (gcloud config configurations list --format='value(name)')
 				switch $_selectedEnvironment
-					case $CLOUDSDK_ACTIVE_CONFIG
-						echo -e "[$_selectedEnvironment] is the current environment.\nUse\n\t'chenv -r'\nor\n\t'chenv --reload'\nto reload it."
+					case $GOOGLE_CONFIG
+						echo -e "[$_selectedEnvironment] is the current environment."
+						_showReloadHelp
 					case contains $_ENVIRONMENTS
 						echo "[$_selectedEnvironment] is valid config. Use it."
 						_changeEnvironment $_selectedEnvironment
@@ -130,16 +183,19 @@ if test -n "$argv"
 						echo "[$_selectedEnvironment] is not a valid environment."
 				end
 			else
-				echo "Please add environment name."
+				echo "Select config from:"
+				ls $GCLOUD_ENVIRONMENTS_PATH | cut -d "_" -f 2
 			end
 		case "reload"
-			_changeEnvironment $CLOUDSDK_ACTIVE_CONFIG
+			_changeEnvironment $GOOGLE_CONFIG
 		case "clear"
-			_clearCloudsdkVariables true
+			_clearVariables true
+			echo "Variables cleared."
 			_unSetK8sContext
+			_setDefaultGcloudProfile
 		case \*
 			echo "Unknown arugment(s). $argv"
 	end
 else
-	_showShortHelp
+	_showLongHelp
 end
