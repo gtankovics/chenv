@@ -56,7 +56,8 @@ function _showListWithDetails
 end
 
 function _setActiveDomainSuffix
-	switch "$CLOUDSDK_PROJECT" 
+	set -l _GOOGLE_PROJECT $argv[1]
+	switch "$_GOOGLE_PROJECT" 
 		case "*production*" -o "*educational*" -o "*customer*"
 			set -xU ACTIVE_DOMAIN_SUFFIX $PRODUCTION_DOMAIN_SUFFIX
 		case "*pilot*"
@@ -64,6 +65,7 @@ function _setActiveDomainSuffix
 		case \*
 			set -xU ACTIVE_DOMAIN_SUFFIX $DEVELOPMENT_DOMAIN_SUFFIX
 	end
+	echo "[r53] updated to [$ACTIVE_DOMAIN_SUFFIX]"
 end
 
 function _setK8sContext
@@ -76,17 +78,17 @@ end
 
 function _unSetK8sContext
 	kubectl config unset current-context
-	clearK8sVariables 
+	_clearK8sVariables
 end
 
 function _setDefaultGcloudProfile
 	gcloud config configurations activate default
 end
 
-function clearGoogleVariables
+function _clearGoogleVariables
 	set -l _showLogs $argv[1]
 	for variable in (set -n | grep "GOOGLE")
-		if test -n "$showLogs"
+		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
 		else
 			set -e $variable
@@ -94,24 +96,36 @@ function clearGoogleVariables
 	end
 end
 
-function clearK8sVariables
+function _clearK8sVariables
 	set -l _showLogs $argv[1]
 	for variable in (set -n | grep "K8S")
-		if test -n "$showLogs"
+		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
 		end
 		set -e $variable
 	end
 end
 
+function _clearActiveDomainSuffix
+	set -l _showLogs $argv[1]
+	if test -n "$ACTIVE_DOMAIN_SUFFIX"
+		if test -n "$_showLogs"
+			echo -e "ACTIVE_DOMAIN_SUFFIX\t\tcleared."
+		end
+		set -e ACTIVE_DOMAIN_SUFFIX
+	end
+end
+
 function _clearVariables
 	set -l _showLogs $argv[1]
 	if test -n "$_showLogs"
-		clearGoogleVariables true
-		clearK8sVariables true
+		_clearGoogleVariables true
+		_clearK8sVariables true
+		_clearActiveDomainSuffix true
 	else
-		clearGoogleVariables
-		clearK8sVariables
+		_clearGoogleVariables
+		_clearK8sVariables
+		_clearActiveDomainSuffix
 	end
 end
 
@@ -122,7 +136,7 @@ function _changeEnvironment
 	set -xU GOOGLE_CONFIG $_environment
 	gcloud config list --format='value[separator=" "](core.project,compute.region,compute.zone,container.cluster)' | read _GOOGLE_PROJECT _GOOGLE_REGION _GOOGLE_ZONE _K8S_CLUSTER_SHORT
 	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
-	_setActiveDomainSuffix
+	_setActiveDomainSuffix $_GOOGLE_PROJECT
 	set -xU GOOGLE_REGION $_GOOGLE_REGION
 	set -xU GOOGLE_ZONE $_GOOGLE_ZONE
 	if test -z "$_K8S_CLUSTER_SHORT"
@@ -139,6 +153,7 @@ function _changeEnvironment
 		_setK8sContext $K8S_CLUSTER_SHORT
 	else
 		echo "There's no cluster in [$GOOGLE_PROJECT] project in [$GOOGLE_REGION] region."
+		_clearK8sVariables true
 		_unSetK8sContext
 	end
 end
