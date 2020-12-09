@@ -146,7 +146,15 @@ function _changeEnvironment
 			echo "[$_K8S_CLUSTER_SHORT] use for 'kubectl'"
 		end
 	else
-		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT] use it for 'kubectl'"
+		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT]."
+		set -l _K8S_CLUSTER_STATE (gcloud container cluster desribe $_K8S_CLUSTER_SHORT --format='value(state)')
+		switch "$_K8S_CLUSTER_STATE"
+			case "RUNNING" -o "CREATING" -o "UPDATING"
+			case "DELETING"
+				echo "[$_K8S_CLUSTER_SHORT] is being deleted."
+			case "UNKNOWN" -o \*
+				echo "Cluster is unknown state. [$_K8S_CLUSTER_STATE]"
+		end
 	end
 	if test -n "$_K8S_CLUSTER_SHORT"
 		set -xU K8S_CLUSTER_SHORT $_K8S_CLUSTER_SHORT
