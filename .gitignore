@@ -1,5 +1,2 @@
-# add code owner
-*	@gtankovics
-
 # ignore any test related file or folder
 test**
