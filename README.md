@@ -33,7 +33,7 @@ Options:
                 edu or educational      List 'educational' environment(s)
                 pilot                   List 'pilot' environment(s)
                 qa                      List 'qa' environment(s)
-                test                    List 'test' environments
+                test                    List 'test' environment(s)
         set     Set the selected environment for 'gcloud' and 'kubectl'.
         reload  Reload the current environment.
         clear   Clear the variables and unset 'kubectl' context and set `default` 'gcloud' profile
