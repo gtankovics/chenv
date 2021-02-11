@@ -21,7 +21,7 @@ function _showLongHelp
 	\tedu or educational\tList 'educational' environment(s)
 	\tpilot\t\t\tList 'pilot' environment(s)
 	\tqa\t\t\tList 'qa' environment(s)
-	\ttest\t\t\tList 'test' environments
+	\ttest\t\t\tList 'test' environment(s)
 	set\tSet the selected environment for 'gcloud' and 'kubectl'.
 	reload\tReload the current environment.
 	clear\tClear the variables and unset 'kubectl' context. 
@@ -34,7 +34,7 @@ end
 
 function _showList
 	if test -n "$argv[1]"
-		set -l filter "name:$argv[1]"
+		set -l filter "name~$argv[1]"
 		gcloud config configurations list --format='value(name)' --filter=$filter
 	else
 		gcloud config configurations list --format='value(name)'
@@ -146,7 +146,15 @@ function _changeEnvironment
 			echo "[$_K8S_CLUSTER_SHORT] use for 'kubectl'"
 		end
 	else
-		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT] use it for 'kubectl'"
+		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT]."
+		set -l _K8S_CLUSTER_STATE (gcloud container cluster desribe $_K8S_CLUSTER_SHORT --format='value(state)')
+		switch "$_K8S_CLUSTER_STATE"
+			case "RUNNING" -o "CREATING" -o "UPDATING"
+			case "DELETING"
+				echo "[$_K8S_CLUSTER_SHORT] is being deleted."
+			case "UNKNOWN" -o \*
+				echo "Cluster is unknown state. [$_K8S_CLUSTER_STATE]"
+		end
 	end
 	if test -n "$_K8S_CLUSTER_SHORT"
 		set -xU K8S_CLUSTER_SHORT $_K8S_CLUSTER_SHORT
@@ -173,8 +181,8 @@ if test -n "$argv"
 						_showList "educational"
 					case "pilot"
 						_showList "pilot"
-					case "qa"
-						_showList "qa"
+					case "team"
+						_showList "team"
 					case "test"
 						_showList "test"
 					case \*
