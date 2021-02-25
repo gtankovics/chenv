@@ -20,11 +20,12 @@ function _showLongHelp
 	\tprod or production\tList 'production' environment(s)
 	\tedu or educational\tList 'educational' environment(s)
 	\tpilot\t\t\tList 'pilot' environment(s)
-	\tqa\t\t\tList 'qa' environment(s)
+	\tteam\t\t\tList 'team' environment(s)
 	\ttest\t\t\tList 'test' environment(s)
+	\n\t\tList parameter understand combination of environments like 'prod,edu'. Separate the environments list with comma (,).\n
 	set\tSet the selected environment for 'gcloud' and 'kubectl'.
 	reload\tReload the current environment.
-	clear\tClear the variables and unset 'kubectl' context. 
+	clear\tClear the variables and unset 'kubectl' context and set `default` 'gcloud' profile.
 	"
 end
 
@@ -172,21 +173,30 @@ if test -n "$argv"
 			_showLongHelp
 		case "list"
 			if test -n "$argv[2]"
-				switch $argv[2]
-					case "details"
+				if string match -q "details" "$argv[2]"
 						_showListWithDetails
-					case "prod" -o "production"
-						_showList "production"
-					case "edu" -o "educational"
-						_showList "educational"
-					case "pilot"
-						_showList "pilot"
-					case "team"
-						_showList "team"
-					case "test"
-						_showList "test"
-					case \*
+				else
+					set -l environmentArguments (string split , $argv[2])
+					set -l environments
+					for env in $environmentArguments
+						switch $env
+							case "prod" -o "production"
+								set environments $environments (_showList "production")
+							case "edu" -o "educational"
+								set environments $environments (_showList "educational")
+							case "pilot"
+								set environments $environments (_showList "pilot")
+							case "team"
+								set environments $environments (_showList "team")
+							case "test"
+								set environments $environments (_showList "test")
+						end
+					end
+					if test -n "$environments"
+						echo $environments | tr ' ' '\n'
+					else
 						echo "Unknown argument(s). $argv[2]"
+					end
 				end
 			else
 				_showList
