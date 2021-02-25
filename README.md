@@ -32,8 +32,11 @@ Options:
                 prod or production      List 'production' environment(s)
                 edu or educational      List 'educational' environment(s)
                 pilot                   List 'pilot' environment(s)
-                qa                      List 'qa' environment(s)
+                team                    List 'team' environment(s)
                 test                    List 'test' environment(s)
+
+                List parameter understand combination of environments like 'prod,edu'. Separate the environments list with comma (,).
+                
         set     Set the selected environment for 'gcloud' and 'kubectl'.
         reload  Reload the current environment.
         clear   Clear the variables and unset 'kubectl' context and set `default` 'gcloud' profile
