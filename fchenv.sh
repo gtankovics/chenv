@@ -88,7 +88,7 @@ end
 
 function _clearGoogleVariables
 	set -l _showLogs $argv[1]
-	for variable in (set -n | grep "GOOGLE")
+	for variable in (set -n | grep "^GOOGLE")
 		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
 		else
@@ -99,7 +99,7 @@ end
 
 function _clearK8sVariables
 	set -l _showLogs $argv[1]
-	for variable in (set -n | grep "K8S")
+	for variable in (set -n | grep "^K8S")
 		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
 		end
