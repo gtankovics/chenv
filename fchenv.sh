@@ -82,6 +82,24 @@ function _unSetK8sContext
 	_clearK8sVariables
 end
 
+function _stopK8sProxy
+	set -l proxyPid (ps aux | grep "kubectl proxy" | grep -v grep | awk '{print $2}')
+	if test -n "$proxyPid"
+		kill -9 $proxyPid
+		echo "kubectl proxy stopped. [$proxyPid]"
+	end
+end
+
+function _startK8sProxy
+	kubectl proxy &
+	echo -n "kubectl proxy started. [$last_pid]"
+end
+
+function _restartK8sProxy
+	_stopK8sProxy
+	_startK8sProxy
+end
+
 function _setDefaultGcloudProfile
 	gcloud config configurations activate default
 end
@@ -148,7 +166,7 @@ function _changeEnvironment
 		end
 	else
 		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT]."
-		set -l _K8S_CLUSTER_STATE (gcloud container clusters describe $_K8S_CLUSTER_SHORT --format='value(status)')
+		set -l _K8S_CLUSTER_STATUS (gcloud container clusters describe $_K8S_CLUSTER_SHORT --format='value(status)')
 		switch "$_K8S_CLUSTER_STATUS"
 			case "RUNNING" -o "CREATING" -o "UPDATING"
 			case "DELETING"
@@ -160,6 +178,7 @@ function _changeEnvironment
 	if test -n "$_K8S_CLUSTER_SHORT"
 		set -xU K8S_CLUSTER_SHORT $_K8S_CLUSTER_SHORT
 		_setK8sContext $K8S_CLUSTER_SHORT
+		_restartK8sProxy
 	else
 		echo "There's no cluster in [$GOOGLE_PROJECT] project in [$GOOGLE_REGION] region."
 		_clearK8sVariables true
@@ -225,6 +244,7 @@ if test -n "$argv"
 			_clearVariables true
 			echo "Variables cleared."
 			_unSetK8sContext
+			_stopK8sProxy
 			_setDefaultGcloudProfile
 		case \*
 			echo "Unknown arugment(s). $argv"
