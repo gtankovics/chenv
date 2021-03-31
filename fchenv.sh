@@ -86,18 +86,18 @@ function _stopK8sProxy
 	set -l proxyPid (ps aux | grep "kubectl proxy" | grep -v grep | awk '{print $2}')
 	if test -n "$proxyPid"
 		kill -9 $proxyPid
-		echo "kubectl proxy stopped. [$proxyPid]"
+		# echo "kubectl proxy stopped. [$proxyPid]"
 	end
 end
 
 function _startK8sProxy
 	kubectl proxy &
-	echo -n "kubectl proxy started. [$last_pid]"
 end
 
 function _restartK8sProxy
 	_stopK8sProxy
 	_startK8sProxy
+	echo "kubectl proxy (re)started. [$last_pid]"
 end
 
 function _setDefaultGcloudProfile
