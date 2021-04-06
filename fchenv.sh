@@ -91,13 +91,13 @@ function _stopK8sProxy
 end
 
 function _startK8sProxy
-	kubectl proxy &
+	kubectl proxy 2 1 > /dev/null &
 end
 
 function _restartK8sProxy
 	_stopK8sProxy
 	_startK8sProxy
-	echo "kubectl proxy (re)started. [$last_pid]"
+	echo "kubectl proxy (re)started."
 end
 
 function _setDefaultGcloudProfile
