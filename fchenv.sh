@@ -109,9 +109,8 @@ function _clearGoogleVariables
 	for variable in (set -n | grep "^GOOGLE")
 		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
-		else
-			set -e $variable
 		end
+		set -e $variable
 	end
 end
 
