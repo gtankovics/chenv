@@ -74,7 +74,7 @@ function _setK8sContext
 	gcloud container clusters get-credentials $_cluster
     set -xU K8S_CLUSTER (kubectl config current-context)
 	set -xU K8S_CLUSTER_SHORT (echo $K8S_CLUSTER | cut -d "_" -f 4)
-    set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")
+    set -xU K8S_CLUSTER_VERSION (kubectl version --output json | jq -r .serverVersion.gitVersion)
 end
 
 function _unSetK8sContext
