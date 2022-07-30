@@ -156,7 +156,11 @@ function _changeEnvironment
 	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
 	_setActiveDomainSuffix $_GOOGLE_PROJECT
 	set -xU GOOGLE_REGION $_GOOGLE_REGION
-	set -xU GOOGLE_ZONE $_GOOGLE_ZONE
+	if string match -q -r "[a-z]+-[a-z]+[0-9]-[a-z]{1}" "$_GOOGLE_ZONE"
+		set -xU GOOGLE_ZONE $_GOOGLE_ZONE
+	else
+		set _K8S_CLUSTER_SHORT $_GOOGLE_ZONE 
+	end
 	if test -z "$_K8S_CLUSTER_SHORT"
 		echo "[$GOOGLE_CONFIG] does not have container/cluster property. Searching clusters from cloud."
 		set _K8S_CLUSTER_SHORT (gcloud container clusters list --format='value(name)' --limit 1)
