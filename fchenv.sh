@@ -74,7 +74,7 @@ function _setK8sContext
 	gcloud container clusters get-credentials $_cluster
     set -xU K8S_CLUSTER (kubectl config current-context)
 	set -xU K8S_CLUSTER_SHORT (echo $K8S_CLUSTER | cut -d "_" -f 4)
-    set -xU K8S_CLUSTER_VERSION (kubectl version --short | awk "/Server/{print\$3}")
+    set -xU K8S_CLUSTER_VERSION (kubectl version --output json | jq -r .serverVersion.gitVersion)
 end
 
 function _unSetK8sContext
@@ -86,18 +86,18 @@ function _stopK8sProxy
 	set -l proxyPid (ps aux | grep "kubectl proxy" | grep -v grep | awk '{print $2}')
 	if test -n "$proxyPid"
 		kill -9 $proxyPid
-		echo "kubectl proxy stopped. [$proxyPid]"
+		# echo "kubectl proxy stopped. [$proxyPid]"
 	end
 end
 
 function _startK8sProxy
-	kubectl proxy &
-	echo -n "kubectl proxy started. [$last_pid]"
+	kubectl proxy 2 1 > /dev/null &
 end
 
 function _restartK8sProxy
 	_stopK8sProxy
 	_startK8sProxy
+	echo "kubectl proxy (re)started."
 end
 
 function _setDefaultGcloudProfile
@@ -109,9 +109,8 @@ function _clearGoogleVariables
 	for variable in (set -n | grep "^GOOGLE")
 		if test -n "$_showLogs"
 			echo -e "$variable\t\tcleared."
-		else
-			set -e $variable
 		end
+		set -e $variable
 	end
 end
 
@@ -157,7 +156,11 @@ function _changeEnvironment
 	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
 	_setActiveDomainSuffix $_GOOGLE_PROJECT
 	set -xU GOOGLE_REGION $_GOOGLE_REGION
-	set -xU GOOGLE_ZONE $_GOOGLE_ZONE
+	if string match -q -r "[a-z]+-[a-z]+[0-9]-[a-z]{1}" "$_GOOGLE_ZONE"
+		set -xU GOOGLE_ZONE $_GOOGLE_ZONE
+	else
+		set _K8S_CLUSTER_SHORT $_GOOGLE_ZONE 
+	end
 	if test -z "$_K8S_CLUSTER_SHORT"
 		echo "[$GOOGLE_CONFIG] does not have container/cluster property. Searching clusters from cloud."
 		set _K8S_CLUSTER_SHORT (gcloud container clusters list --format='value(name)' --limit 1)

@@ -1,2 +1,5 @@
 # ignore any test related file or folder
 test**
+
+# node_modules
+node_modules
