@@ -169,13 +169,15 @@ function _changeEnvironment
 		end
 	else
 		echo "[$GOOGLE_CONFIG] has cluster property [$_K8S_CLUSTER_SHORT]."
-		set -l _K8S_CLUSTER_STATUS (gcloud container clusters describe $_K8S_CLUSTER_SHORT --format='value(status)')
+		set -l _K8S_CLUSTER_STATUS (gcloud container clusters describe $_K8S_CLUSTER_SHORT --format='value(status)' 2>/dev/null)
 		switch "$_K8S_CLUSTER_STATUS"
 			case "RUNNING" -o "CREATING" -o "UPDATING"
 			case "DELETING"
 				echo "[$_K8S_CLUSTER_SHORT] is being deleted."
+				set -e _K8S_CLUSTER_SHORT
 			case "UNKNOWN" -o \*
 				echo "Cluster is unknown state. [$_K8S_CLUSTER_STATUS]"
+				set -e _K8S_CLUSTER_SHORT
 		end
 	end
 	if test -n "$_K8S_CLUSTER_SHORT"
