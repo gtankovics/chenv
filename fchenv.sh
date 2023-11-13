@@ -150,10 +150,16 @@ end
 function _changeEnvironment
 	_clearVariables
 	set -l _environment $argv[1]
-	gcloud config configurations activate $_environment
+	gcloud config configurations activate $_environment 2>/dev/null
 	set -xU GOOGLE_CONFIG $_environment
 	gcloud config list --format='value[separator=" "](core.project,compute.region,compute.zone,container.cluster)' | read _GOOGLE_PROJECT _GOOGLE_REGION _GOOGLE_ZONE _K8S_CLUSTER_SHORT
 	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
+	gcloud auth application-default set-quota-project $_GOOGLE_PROJECT --quiet
+	if test (cat ~/.config/gcloud/application_default_credentials.json | jq -r '.quota_project_id') != $_GOOGLE_PROJECT
+		echo 'ADC (Application Default Credentials) is not match the current PROJECT_ID' 1>&2
+	else
+		echo "[$_GOOGLE_PROJECT] is set to ADC default quota project."
+	end
 	_setActiveDomainSuffix $_GOOGLE_PROJECT
 	set -xU GOOGLE_REGION $_GOOGLE_REGION
 	if string match -q -r "[a-z]+-[a-z]+[0-9]-[a-z]{1}" "$_GOOGLE_ZONE"
