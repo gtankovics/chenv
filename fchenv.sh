@@ -71,9 +71,18 @@ end
 
 function _setK8sContext
 	set -l _cluster $argv[1]
-	gcloud container clusters get-credentials $_cluster
-    set -xU K8S_CLUSTER (kubectl config current-context)
-	set -xU K8S_CLUSTER_SHORT (echo $K8S_CLUSTER | cut -d "_" -f 4)
+	set -l _dns_endpoint (gcloud container clusters describe "$_cluster" --format='value(controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint)')
+	if test $status -ne 0
+		return 1
+	end
+	if test -n "$_dns_endpoint"
+		gcloud container clusters get-credentials "$_cluster" --dns-endpoint
+	else
+		gcloud container clusters get-credentials "$_cluster"
+	end
+	or return $status
+	set -xU K8S_CLUSTER (kubectl config current-context)
+	set -xU K8S_CLUSTER_SHORT "$_cluster"
     set -xU K8S_CLUSTER_VERSION (kubectl version --output json | jq -r .serverVersion.gitVersion)
 end
 
@@ -91,7 +100,7 @@ function _stopK8sProxy
 end
 
 function _startK8sProxy
-	kubectl proxy 2 1 > /dev/null &
+	kubectl proxy >/dev/null 2>&1 &
 end
 
 function _restartK8sProxy
@@ -147,14 +156,30 @@ function _clearVariables
 	end
 end
 
+function _echoVariables
+	set -l _GOOGLE_PROJECT $argv[1]
+	set -l _GOOGLE_REGION $argv[2]
+	set -l _GOOGLE_ZONE $argv[3]
+	set -l _K8S_CLUSTER_SHORT $argv[4]
+	echo "GOOGLE_PROJECT: $_GOOGLE_PROJECT"
+	echo "GOOGLE_REGION: $_GOOGLE_REGION"
+	echo "GOOGLE_ZONE: $_GOOGLE_ZONE"
+	echo "K8S_CLUSTER_SHORT: $_K8S_CLUSTER_SHORT"
+end
+
 function _changeEnvironment
 	_clearVariables
 	set -l _environment $argv[1]
 	gcloud config configurations activate $_environment 2>/dev/null
 	set -xU GOOGLE_CONFIG $_environment
-	gcloud config list --format='value[separator=" "](core.project,compute.region,compute.zone,container.cluster)' | read _GOOGLE_PROJECT _GOOGLE_REGION _GOOGLE_ZONE _K8S_CLUSTER_SHORT
+	set -l _gcloud_config (gcloud config list --format=json | string collect)
+	set -l _GOOGLE_PROJECT (printf '%s\n' "$_gcloud_config" | jq -r '.core.project // ""')
+	set -l _GOOGLE_REGION (printf '%s\n' "$_gcloud_config" | jq -r '.compute.region // ""')
+	set -l _GOOGLE_ZONE (printf '%s\n' "$_gcloud_config" | jq -r '.compute.zone // ""')
+	set -l _K8S_CLUSTER_SHORT (printf '%s\n' "$_gcloud_config" | jq -r '.container.cluster // ""')
+	_echoVariables "$_GOOGLE_PROJECT" "$_GOOGLE_REGION" "$_GOOGLE_ZONE" "$_K8S_CLUSTER_SHORT"
 	set -xU GOOGLE_PROJECT $_GOOGLE_PROJECT
-	gcloud auth application-default set-quota-project $_GOOGLE_PROJECT --quiet
+	gcloud auth application-default set-quota-project $_GOOGLE_PROJECT --quiet 2>/dev/null
 	if test (cat ~/.config/gcloud/application_default_credentials.json | jq -r '.quota_project_id') != $_GOOGLE_PROJECT
 		echo 'ADC (Application Default Credentials) is not match the current PROJECT_ID' 1>&2
 	else
