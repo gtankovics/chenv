@@ -25,7 +25,7 @@ if not test -f "$userBin/$execName"
 	cp $execScript ~/bin/$execName
 	checkLink
 else
-	if not diff -y -q ./$execScript $userBin/$execName
+	if not diff -q ./$execScript $userBin/$execName
 		if yesno "Show differencies?"
 			diff ./$execScript $userBin/$execName
 		end
@@ -39,7 +39,7 @@ else
 	else
 		echo "$execName is the latest."
 	end
-	if not diff -y -q ./completions/$autocompleteScript $__fish_config_dir/completions/$autocompleteScript
+	if not diff -q ./completions/$autocompleteScript $__fish_config_dir/completions/$autocompleteScript
 		if yesno "Show differenices?"
 			diff ./completions/$autocompleteScript ./__fish_config_dir/completions/$autocompleteScript
 		end
